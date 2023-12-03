@@ -27,3 +27,4 @@ contract SimpleWallet {
         return balances[msg.sender];
     }
 }
+
