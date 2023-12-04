@@ -6,6 +6,7 @@ contract SimpleWallet {
 
     event Deposit(address indexed depositor, uint256 amount);
     event Withdrawal(address indexed beneficiary, uint256 amount);
+    event Transfer(address indexed sender, address indexed recipient, uint256 amount);
 
     function deposit() external payable {
         require(msg.value > 0, "Deposit amount must be greater than 0");
@@ -23,8 +24,17 @@ contract SimpleWallet {
         emit Withdrawal(msg.sender, _amount);
     }
 
+    function transfer(address _recipient, uint256 _amount) external {
+        require(_amount > 0, "Transfer amount must be greater than 0");
+        require(_amount <= balances[msg.sender], "Insufficient balance");
+        require(_recipient != address(0), "Invalid recipient address");
+
+        balances[msg.sender] -= _amount;
+        balances[_recipient] += _amount;
+        emit Transfer(msg.sender, _recipient, _amount);
+    }
+
     function getBalance() external view returns (uint256) {
         return balances[msg.sender];
     }
 }
-
