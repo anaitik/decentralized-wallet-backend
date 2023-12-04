@@ -1,53 +1,61 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-contract SimpleWallet {
-    mapping(address => uint256) public balances;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract MultiTokenWallet {
+    using SafeERC20 for IERC20;
+
+    mapping(address => mapping(address => uint256)) public tokenBalances;
     mapping(address => bool) public hasAccount;
 
-    event Deposit(address indexed depositor, uint256 amount);
-    event Withdrawal(address indexed beneficiary, uint256 amount);
-    event Transfer(address indexed sender, address indexed recipient, uint256 amount);
+    event Deposit(address indexed account, address indexed token, uint256 amount);
+    event Withdrawal(address indexed account, address indexed token, uint256 amount);
+    event Transfer(address indexed sender, address indexed recipient, address indexed token, uint256 amount);
 
     function createAccount() external {
         require(!hasAccount[msg.sender], "Account already exists");
-        
-        // You can use a more sophisticated method to generate a unique address
-        // For simplicity, we'll use the sender's address as the unique identifier
         hasAccount[msg.sender] = true;
-        emit Transfer(address(0), msg.sender, 0); // This can be used as a signal for the account creation
     }
 
-    function deposit() external payable {
+    function deposit(address _token, uint256 _amount) external {
         require(hasAccount[msg.sender], "Account does not exist");
-        require(msg.value > 0, "Deposit amount must be greater than 0");
+        require(_amount > 0, "Deposit amount must be greater than 0");
 
-        balances[msg.sender] += msg.value;
-        emit Deposit(msg.sender, msg.value);
+        IERC20 token = IERC20(_token);
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+        tokenBalances[msg.sender][_token] += _amount;
+
+        emit Deposit(msg.sender, _token, _amount);
     }
 
-    function withdraw(uint256 _amount) external {
+    function withdraw(address _token, uint256 _amount) external {
         require(hasAccount[msg.sender], "Account does not exist");
         require(_amount > 0, "Withdrawal amount must be greater than 0");
-        require(_amount <= balances[msg.sender], "Insufficient balance");
+        require(_amount <= tokenBalances[msg.sender][_token], "Insufficient balance");
 
-        balances[msg.sender] -= _amount;
-        payable(msg.sender).transfer(_amount);
-        emit Withdrawal(msg.sender, _amount);
+        IERC20 token = IERC20(_token);
+        tokenBalances[msg.sender][_token] -= _amount;
+        token.safeTransfer(msg.sender, _amount);
+
+        emit Withdrawal(msg.sender, _token, _amount);
     }
 
-    function transfer(address _recipient, uint256 _amount) external {
+    function transfer(address _recipient, address _token, uint256 _amount) external {
         require(hasAccount[msg.sender], "Account does not exist");
         require(_amount > 0, "Transfer amount must be greater than 0");
-        require(_amount <= balances[msg.sender], "Insufficient balance");
+        require(_amount <= tokenBalances[msg.sender][_token], "Insufficient balance");
         require(_recipient != address(0), "Invalid recipient address");
 
-        balances[msg.sender] -= _amount;
-        balances[_recipient] += _amount;
-        emit Transfer(msg.sender, _recipient, _amount);
+        IERC20 token = IERC20(_token);
+        tokenBalances[msg.sender][_token] -= _amount;
+        tokenBalances[_recipient][_token] += _amount;
+
+        emit Transfer(msg.sender, _recipient, _token, _amount);
     }
 
-    function getBalance() external view returns (uint256) {
-        return balances[msg.sender];
+    function getTokenBalance(address _account, address _token) external view returns (uint256) {
+        return tokenBalances[_account][_token];
     }
 }
