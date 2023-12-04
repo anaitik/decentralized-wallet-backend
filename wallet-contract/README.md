@@ -1,3 +1,11 @@
+#text from author
+https://thirdweb.com/meter-testnet/0xB8A928a1eC3DE15F6Facb0610d49814D87FB390F/explorer
+the above link is where the contract is deployed u can test apis
+create account and it will connect ur account address to ur wallet, then in order to transfer put network identifier token address and contract and reciever address 
+the project was fun 
+PS: for testing meter test net tokens are haeven , to get even tokens the mumbai network goes around beating bush to connect discord join and then only allowing 0.2 tokens every 5 minutes lol
+
+
 ## Getting Started
 
 Create a project using this example:
